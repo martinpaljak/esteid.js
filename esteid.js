@@ -46,31 +46,28 @@
           'REMARK4',
         ];
         return new Promise(function (resolve, reject) {
-          // Select MF
-          transmit("00a4000400").then(function (response) {
-            // Select EEEE
-            return transmit("00a4000c");
-          }).then(function (response) {
+            // SELECT FILE MF
+          transmit("00a4000c").then(function (response) {
+            // SELECT FILE EEEE
             return transmit("00a4010c02eeee");
           }).then(function (response) {
+            // SELECT FILE 5044
             return transmit("00a4020c025044");
           }).then(function (response) {
-            var pd = [];
-            for (var record in records) {
-              pd.push(new Promise((resolve, reject) => {
-                transmit(new Buffer([0x00,0xB2,parseInt(record) + 1,0x04,0x00,])).then(function (r) {
-                  resolve(r);
+            // NB! requires sequential exection
+            var personaldata = {};
+            records.reduce(function (promise, item) {
+              return promise.then(function (result) {
+                // READ RECORD
+                return transmit(new Buffer([0x00,0xB2,records.indexOf(item) + 1,0x04,0x00,])).then(function (result) {
+                  var recordvalue = result.slice(0, result.length - 2);
+                  // FIXME: latin1 is not correct
+                  personaldata[item] = recordvalue.length == 1 && recordvalue[0] == 0x00 ? "" : recordvalue.toString('latin1').trim();
                 });
-              }));
-            }
-            return Promise.all(pd);
-          }).then(function (pd) {
-            var persodata = {};
-            for (var a in pd) {
-              var recordvalue = pd[a].slice(0, pd[a].length - 2);
-              persodata[records[a]] = recordvalue.length == 1 && recordvalue[0] == 0x00 ? "" : recordvalue.toString('latin1').trim();
-            }
-            resolve(persodata);
+              });
+            }, Promise.resolve()).then(function () {
+              resolve(personaldata);
+            });
           });
         });
       };

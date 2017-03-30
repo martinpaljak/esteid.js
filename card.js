@@ -15,6 +15,7 @@ function pcsc_transmit(reader, protocol) {
         if (err) {
           reject(err);
         } else {
+          // TODO: GET RESPONSE (61XX) and Le (6CXX) handling
           var sw = data.slice(-2);
           console.log("RECV: " + data.slice(0, data.length - 2).toString('hex') + " SW: " + sw.toString('hex'));
           resolve(data);

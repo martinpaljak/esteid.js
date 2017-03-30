@@ -1,0 +1,29 @@
+{
+  "name": "esteid",
+  "version": "0.0.1",
+  "description": "APDU interface of EstEID cards",
+  "main": "esteid.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/martinpaljak/esteid.js.git"
+  },
+  "keywords": [
+    "apdu",
+    "esteid",
+    "smartcard",
+    "pcsc",
+    "crypto"
+  ],
+  "author": "Martin Paljak",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/martinpaljak/esteid.js/issues"
+  },
+  "homepage": "https://github.com/martinpaljak/esteid.js#readme",
+  "devDependencies": {
+    "pcsclite": "^0.5.0"
+  }
+}

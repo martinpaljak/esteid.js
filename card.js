@@ -28,7 +28,7 @@ function transmit (reader, protocol) {
 // Finds a card with a ATR as in the list, then
 // runs the application-promise generator
 function run (atrs, app) {
-  console.log('Please connect a card reaer and insert a card')
+  console.log('Please connect a card reader and insert a card')
   // If a single ATR
   if (typeof atrs === 'string') {
     atrs = [atrs]
@@ -86,12 +86,10 @@ function run (atrs, app) {
               if (err) {
                 console.log(err)
               } else {
-                console.log('Starting application, protocol', protocol)
                 reader.connected = true
                 app(transmit(reader, protocol)).then(() => {
-                  console.log('DONE')
                   reader.disconnect(() => {
-                    console.log('Reader disconnected')
+                    console.log('Done, reader disconnected')
                     process.exit(0)
                   })
                 }).catch((err) => {

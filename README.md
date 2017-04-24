@@ -45,7 +45,9 @@ var EstEID = esteid.connect(transmit)
 Returns a Promise that resolves to the personal data file contents. Takes a field name (string) or a list of field names as a parameter. By default reads all fields.
 
 ```javascript
-EstEID.getPersonalData().then((data) => console.log(JSON.stringify(data)))
+EstEID.getPersonalData().then(
+  (data) => console.log(JSON.stringify(data, null, 2))
+)
 ```
 Would show
 ```javascript
@@ -74,14 +76,20 @@ Returns a Promise that resolves if PIN verification succeeds. Use `EstEID.PIN1`,
 
 ```javascript
 var pin = Promise.resolve('1234')
-EstEID.verify(EstEID.PIN1, pin).then(() => console.log('PIN verified'), (e) => console.log('PIN verification failed', e))
+EstEID.verify(EstEID.PIN1, pin).then(
+  () => console.log('PIN verified'),
+  (e) => console.log('PIN verification failed', e)
+)
 ```
 
 There is a handy PIN wrapper for CLI application in `cli.js`
 
 ```javascript
 const cli = require('./cli.js')
-EstEID.verify(EstEID.PIN1, cli.PIN('Please enter PIN1')).then(() => console.log('PIN verified'), (e) => console.log('PIN verification failed', e))
+EstEID.verify(EstEID.PIN1, cli.PIN('Please enter PIN1')).then(
+  () => console.log('PIN verified'),
+  (e) => console.log('PIN verification failed', e)
+)
 ```
 
 ### `EstEID.getCertificate(type)`

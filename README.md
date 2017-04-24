@@ -1,8 +1,8 @@
 # esteid.js &middot; [![npm version](https://badge.fury.io/js/esteid.svg)](https://badge.fury.io/js/esteid)
-Provides a high level API that transaltes to APDU interface of EstEID cards, in JavaScript.
+Provides a high level API that transaltes to low level APDU interface of EstEID cards, in JavaScript.
 
-## Requirements (BIBO transmit)
-Requires the availability of a Promise based BIBO (Bytes-go-In, Bytes-come-Out) transmit function. That is, a function that takes the binary APDU and returns a Promise that would resolve to the response from the card, that in a mix of PC/SC and JavaScript would look something like:
+## BIBO transmit explained
+Requires the availability of a reliable Promise based BIBO (Bytes-go-In, Bytes-come-Out) transmit function. That is, a function that takes an APDU and returns a Promise that would resolve to the response from the card, that in a mix of PC/SC and JavaScript would look something like:
 
 ```javascript
 function transmit(Buffer apdu) {
@@ -101,7 +101,7 @@ EstEID.getCertificate(EstEID.AUTH).then((cert) => {
 })
 ```
 
-### `EstEID.authenticate(dtbs, pinpromise)`
+### `EstEID.authenticate(challenge, pinpromise)`
 Returns a Promise that resolves to the result of RSA signature operation with the authentication key, as a Buffer.
 PIN promise, if provided, is resolved only if the card is in unauthenticated state.
 
@@ -113,10 +113,10 @@ EstEID.authenticate(challenge).then((cryptogram) => {
 
 ### `EstEID.sign(dtbs, pinpromise)`
 Returns a Promise that resolves to the result of RSA signature operation with the signing key, as a Buffer.
-PIN promise is required and is always resolved
+PIN promise is required and is always resolved.
 
 ```javascript
-EstEID.sign(payload).then((signature) => {
+EstEID.sign(dtbs, Promise.resolve('12345')).then((signature) => {
    // do something with the signature
 })
 ```

@@ -4,7 +4,7 @@ Provides a high level API that transaltes to low level APDU interface of EstEID 
 For NodeJS and Web.
 
 ## BIBO transmit explained
-Requires the availability of a reliable Promise based BIBO (Bytes-go-In, Bytes-come-Out) transmit function. That is, a function that takes an APDU and returns a Promise that would resolve to the response from the card, that in a mix of PC/SC and JavaScript would look something like:
+Requires the availability of a reliable Promise based BIBO (Bytes-go-In, Bytes-come-Out) transmit function. That is, a function that takes an APDU and returns a Promise that would resolve to the response from the card, that with a mix of PC/SC and JavaScript would look something like:
 
 ```javascript
 function transmit(Buffer apdu) {
@@ -132,4 +132,23 @@ EstEID.decrypt(cryptogram).then((plaintext) => {
    // do something with the plaintext
 })
 ```
+
+### `EstEID.getPINCounters(pin)`
+Returns a Promise that resolves to the remaining PIN tries for all PIN-s or the PIN specified. By default all remaining retries are returned in an array (`[PIN1, PIN2, PUK]`). If a single pin is given as a parameter, a single counter is returned.
+
+```javascript
+EstEID.getPINCounters().then((triesleft) => {
+   // do something with the tries left information
+})
+```
+
+### `EstEID.getKeyCounters(key)`
+Returns a Promise that resolves to the key usage counters. By default both counters returned in an array (`[AUTH, SIGN]`). If a single key is given as a parameter, a single counter is returned.
+
+```javascript
+EstEID.getKeyCounters().then((counters) => {
+   // do something with the counters
+})
+```
+
 

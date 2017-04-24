@@ -4,10 +4,7 @@
   "description": "APDU interface of EstEID cards",
   "main": "esteid.js",
   "scripts": {
-    "test": [
-      "standard",
-      "node test.js"
-    ],
+    "test": "node test.js",
     "indent": "standard --fix"
   },
   "repository": {

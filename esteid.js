@@ -4,8 +4,8 @@
   const apdu = require('./apdu.js')
   const pkg = require('./package.json')
 
-  var VERSION = pkg.version
-  var ATRS = [
+  const VERSION = pkg.version
+  const ATRS = [
     '3BFE9400FF80B1FA451F034573744549442076657220312E3043',
     '3BDE18FFC080B1FE451F034573744549442076657220312E302B',
     '3B5E11FF4573744549442076657220312E30',
@@ -19,6 +19,13 @@
     '3BFA1800008031FE45FE654944202F20504B4903'
   ]
 
+  const PIN1 = 1
+  const PIN2 = 2
+  const PUK = 0
+
+  const AUTH = 1
+  const SIGN = 2
+
   // construct
   var esteid = function () {
     console.log('EstEID v' + VERSION)
@@ -29,7 +36,7 @@
     fields.connect = function (transmit) {
       var eid = {}
 
-      eid.getPINCounters = function (pin) {
+      function getPINCounters (pin) {
         if (typeof pin === 'undefined') { pin = [0, 1, 2] } else if (typeof pin === 'number') { pin = [pin] }
         var counters = []
         return new Promise(function (resolve, reject) {
@@ -43,7 +50,6 @@
               return promise.then(function (result) {
                 // READ RECORD
                 return apdu.check(transmit(Buffer.from([0x00, 0xB2, item + 1, 0x04, 0x00]))).then(function (result) {
-                  // FIXME: APDU handling
                   counters[item] = result[5]
                 }).catch(function (err) {
                   console.log('Reading counters failed', err)
@@ -62,8 +68,7 @@
         })
       }
 
-      eid.getPersonalData = function (select) {
-        console.log('Reading personal data')
+      function getPersonalData (select) {
         var records = [
           'SURNAME',
           'GIVEN_NAMES1',
@@ -99,7 +104,7 @@
                 // READ RECORD
                 return apdu.check(transmit(Buffer.from([0x00, 0xB2, records.indexOf(item) + 1, 0x04, 0x00]))).then(function (result) {
                   var recordvalue = result.slice(0, result.length - 2)
-                  // FIXME: latin1 is not correct
+                  // FIXME: latin1 is not correct, must be Windows-1257
                   personaldata[item] = recordvalue.length === 1 && recordvalue[0] === 0x00 ? '' : recordvalue.toString('latin1').trim()
                 }).catch(function (err) {
                   console.log('Reading persodata failed', err)
@@ -116,7 +121,7 @@
         })
       }
 
-      eid.verify = function (pin, value) {
+      function verify (pin, value) {
         // Verify mentioned PIN
         return new Promise(function (resolve, reject) {
           value.then(function (pv) {
@@ -142,7 +147,7 @@
         })
       }
 
-      eid.readCert = function (type) {
+      function getCertificate (type) {
         return new Promise(function (resolve, reject) {
             // SELECT FILE MF
           apdu.check(transmit('00a4000c')).then(function () {
@@ -150,7 +155,7 @@
             return apdu.check(transmit('00a4010c02eeee'))
           }).then(function () {
             // read aace or ddce
-            return apdu.check(transmit('00a4020c02aace'))
+            return apdu.check(transmit('00a4020c02' + (type === AUTH ? 'aace' : 'ddce')))
           }).then(function () {
             // NB! requires sequential execution
             var cert = Buffer.from([])
@@ -181,7 +186,7 @@
         })
       }
 
-      eid.authenticate = function (dtbs, pin) {
+      function authenticate (dtbs, pin) {
         return new Promise(function (resolve, reject) {
           var header = Buffer.from([0x00, 0x88, 0x00, 0x00, 0x00])
           header[4] = dtbs.length // payload length
@@ -202,26 +207,30 @@
         })
       }
 
-      eid.sign = function (dtbs, pin) {
+      function sign (dtbs, pin) {
         return new Promise(function (resolve, reject) {
+          // SET SECURITY ENVIRONMENT
           apdu.check(transmit('0022F301')).then(function () {
-            eid.verify(2, pin).then(function () {
-              var header = Buffer.from([0x00, 0x2a, 0x9e, 0x9a, 0x00])
-              header[4] = dtbs.length // payload length
+            // VERIFY PIN2
+            return eid.verify(eid.PIN2, pin)
+          }).then(function () {
+            // PSO DIGITAL SIGNATurE
+            var header = Buffer.from([0x00, 0x2a, 0x9e, 0x9a, 0x00])
+            header[4] = dtbs.length // payload length
              // Add Le
-              var cmd = Buffer.concat([header, dtbs, Buffer.from([0x00])])
-              return apdu.check(transmit(cmd)).then(function (response) {
-                return resolve(apdu.data(response))
-              }).catch(function (reason) {
-                console.log('Signing failed: ', reason)
-                return reject(reason)
-              })
-            })
+            var cmd = Buffer.concat([header, dtbs, Buffer.from([0x00])])
+            return apdu.check(transmit(cmd))
+          }).then(function (response) {
+            // resolve to signature
+            return resolve(apdu.data(response))
+          }).catch(function (reason) {
+            console.log('Signing failed: ', reason)
+            return reject(reason)
           })
         })
       }
 
-      eid.decrypt = function (cgram, pin) {
+      function decrypt (cgram, pin) {
         return new Promise(function (resolve, reject) {
           // prepend 0x00
           cgram = Buffer.concat([Buffer.from([0x00]), cgram])
@@ -248,10 +257,21 @@
         })
       }
 
-      // All functions
-      eid.PIN1 = 1
-      eid.PIN2 = 2
-      eid.PUK = 3
+      // Members
+      eid.verify = verify
+      eid.sign = sign
+      eid.authenticate = authenticate
+      eid.decrypt = decrypt
+      eid.getPersonalData = getPersonalData
+      eid.getCertificate = getCertificate
+      eid.getPINCounters = getPINCounters
+
+      eid.AUTH = AUTH
+      eid.SIGN = SIGN
+      eid.PIN1 = PIN1
+      eid.PIN2 = PIN2
+      eid.PUK = PUK
+
       return eid
     }
 

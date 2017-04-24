@@ -1,5 +1,7 @@
 # esteid.js &middot; [![npm version](https://badge.fury.io/js/esteid.svg)](https://badge.fury.io/js/esteid)
-Provides a high level API that transaltes to low level APDU interface of EstEID cards, in JavaScript. For NodeJS and Web.
+Provides a high level API that transaltes to low level APDU interface of EstEID cards, in JavaScript.
+
+For NodeJS and Web.
 
 ## BIBO transmit explained
 Requires the availability of a reliable Promise based BIBO (Bytes-go-In, Bytes-come-Out) transmit function. That is, a function that takes an APDU and returns a Promise that would resolve to the response from the card, that in a mix of PC/SC and JavaScript would look something like:
@@ -11,8 +13,8 @@ function transmit(Buffer apdu) {
 ```
 Two implementations are provided:
 
- - Local [PC/SC implementation](https://msdn.microsoft.com/en-us/library/windows/desktop/aa379804(v=vs.85).aspx), provided by [node-pcsclite](https://github.com/santigimeno/node-pcsclite) (in [`card.js`](./card.js))
- - Implementation for Web apps via [web-eid.js](https://github.com/web-eid/web-eid.js) ([TBD, reference](https://github.com/web-eid/web-eid.js#webeidtransmitbytes))
+ - Local [PC/SC interface](https://msdn.microsoft.com/en-us/library/windows/desktop/aa379804(v=vs.85).aspx), provided by [node-pcsclite](https://github.com/santigimeno/node-pcsclite) (in [`card.js`](./card.js))
+ - Remote interface for web apps, via [web-eid.js](https://github.com/web-eid/web-eid.js) ([TBD, reference](https://github.com/web-eid/web-eid.js#webeidtransmitbytes))
 
 ## Development
 

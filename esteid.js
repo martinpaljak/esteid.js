@@ -157,15 +157,17 @@
             var step = 256
             function readfrom (offset, total) {
               var cmd = Buffer.from([0x00, 0xB0, offset >> 8 & 0xFF, offset & 0xFF, step])
-              return apdu.check(transmit(cmd)).then(function (response) {
-                if (apdu.sw(response) === 0x9000) {
-                  var chunk = response.slice(0, response.length - 2)
-                  cert = Buffer.concat([cert, chunk])
+              return apdu.check(transmit(cmd), 0x6282).then(function (response) {
+                var chunk = response.slice(0, response.length - 2)
+                cert = Buffer.concat([cert, chunk])
                     // 3.4 happily returns zero length chunks if read from end of file
-                  if (chunk.length === 0 || cert.length >= total) {
-                    return resolve(cert.slice(0, cert.lastIndexOf(0x80)))
-                  } else { return readfrom(offset + chunk.length, total) }
-                }
+                    // This also handles 6a82
+                if (chunk.length === 0 || cert.length >= total) {
+                    // find the last byte with non-null value
+                  var cut = cert.length
+                  for (;cert[cut] === 0x00; cut--) {}
+                  return resolve(cert.slice(0, cut))
+                } else { return readfrom(offset + chunk.length, total) }
               }, function (reason) {
                 console.log('READ BINARY failed', reason)
                 return reject(reason)
@@ -202,16 +204,18 @@
 
       eid.sign = function (dtbs, pin) {
         return new Promise(function (resolve, reject) {
-          eid.verify(2, pin).then(function () {
-            var header = Buffer.from([0x00, 0x2a, 0x9e, 0x9a, 0x00])
-            header[4] = dtbs.length // payload length
+          apdu.check(transmit('0022F301')).then(function () {
+            eid.verify(2, pin).then(function () {
+              var header = Buffer.from([0x00, 0x2a, 0x9e, 0x9a, 0x00])
+              header[4] = dtbs.length // payload length
              // Add Le
-            var cmd = Buffer.concat([header, dtbs, Buffer.from([0x00])])
-            return apdu.check(transmit(cmd)).then(function (response) {
-              return resolve(apdu.data(response))
-            }).catch(function (reason) {
-              console.log('Signing failed: ', reason)
-              return reject(reason)
+              var cmd = Buffer.concat([header, dtbs, Buffer.from([0x00])])
+              return apdu.check(transmit(cmd)).then(function (response) {
+                return resolve(apdu.data(response))
+              }).catch(function (reason) {
+                console.log('Signing failed: ', reason)
+                return reject(reason)
+              })
             })
           })
         })

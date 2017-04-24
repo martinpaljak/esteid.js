@@ -1,74 +1,123 @@
-'use strict';
+'use strict'
 
-var pcsc = require('pcsclite')();
+var trace = false
+var pcsc = require('pcsclite')()
 
-function pcsc_transmit(reader, protocol) {
+// Returns a function that accepts APDU-s and return promises
+// that resolve to responses
+function transmit (reader, protocol) {
+  var proto = 'T=?'
+  if (protocol === 1) { proto = 'T=0' } else if (protocol === 2) { proto = 'T=1' }
+
   return function (apdu) {
-    // Assume buffers at this point of time
-    if (typeof apdu === 'string') {
-      apdu = new Buffer(apdu, 'hex');
-    }
-    var get_response = protocol === 1;
     return new Promise(function (resolve, reject) {
-      console.log("SEND: " + apdu.toString('hex'));
+      if (trace) { console.log('SEND (%s): %s', proto, apdu.toString('hex')) }
       reader.transmit(apdu, 4096, protocol, function (err, data) {
         if (err) {
-          reject(err);
+          if (trace) { console.log('RECV: ' + err.message) }
+          return reject(new Error('Transmit failed: ' + err.message))
         } else {
-          // TODO: GET RESPONSE (61XX) and Le (6CXX) handling
-          var sw = data.slice(-2);
-          console.log("RECV: " + data.slice(0, data.length - 2).toString('hex') + " SW: " + sw.toString('hex'));
-          resolve(data);
+          if (trace) { console.log('RECV: ' + data.toString('hex')) }
+          return resolve(data)
         }
-      });
-    });
-  };
+      })
+    })
+  }
 }
 
-// Finds a card with a ATR as in the list, then calls
-// callback(transmit)
-// where transmit returns a promise
-// TODO: add disconnect argument
-function card_with_atr(atrs, callback) {
+// Finds a card with a ATR as in the list, then
+// runs the application-promise generator
+function run (atrs, app) {
+  console.log('Please connect a card reaer and insert a card')
+  // If a single ATR
   if (typeof atrs === 'string') {
-    atrs = [atrs];
+    atrs = [atrs]
   }
+
   // When new reader is seen. SCardListReaders is done by node-pcsclite
   pcsc.on('reader', function (reader) {
-  // Handle errors
-    reader.on('error', function (err) {
-      console.log('Error(', this.name, '):', err.message);
-    });
+    function pstate (status) {
+      const states = [
+        'SCARD_STATE_IGNORE',
+        'SCARD_STATE_CHANGED',
+        'SCARD_STATE_UNKNOWN',
+        'SCARD_STATE_UNAVAILABLE',
+        'SCARD_STATE_EMPTY',
+        'SCARD_STATE_PRESENT',
+        'SCARD_STATE_ATRMATCH',
+        'SCARD_STATE_EXCLUSIVE',
+        'SCARD_STATE_INUSE',
+        'SCARD_STATE_MUTE',
+        'SCARD_STATE_UNPOWERED'
+      ]
+      var res = []
+      for (var s in states) {
+        if (status & reader[states[s]]) {
+          res.push(states[s])
+        }
+      }
+      return res.join(', ')
+    }
 
-  // Query status of reader
+    // Handle errors
+    reader.on('error', function (err) {
+      console.log('Error(', this.name, '):', err.message)
+    })
+
+    var change = 0
+    console.log('READER ', reader.name)
+
+    // Query status of reader
     reader.on('status', function (status) {
-    // If card is present
-      if ((status.state & this.SCARD_STATE_PRESENT)) {
+      change = change ^ status.state
+      if (trace) { console.log(pstate(status.state)) }
+
+      // If card is present
+      if ((change & this.SCARD_STATE_PRESENT) && (status.state & this.SCARD_STATE_CHANGED)) {
+        console.log('CARD ' + reader.name)
         for (var atr in atrs) {
-          if (new Buffer(atrs[atr], 'hex').equals(status.atr)) {
-            console.log("Card in reader %s is EstEID (%s)!", reader.name, status.atr.toString('hex'));
+          if (Buffer.from(atrs[atr], 'hex').equals(status.atr)) {
+            console.log('Card in %s matches (%s)!', reader.name, status.atr.toString('hex'))
           // Connect to card.
             reader.connect({
-              share_mode: this.SCARD_SHARE_SHARED,
+              share_mode: this.SCARD_SHARE_EXCLUSIVE
+              // protocol: this.SCARD_PROTOCOL_T1
             }, function (err, protocol) {
               if (err) {
-                console.log(err);
+                console.log(err)
               } else {
-                callback(pcsc_transmit(reader, protocol));
+                console.log('Starting application, protocol', protocol)
+                reader.connected = true
+                app(transmit(reader, protocol)).then(() => {
+                  console.log('DONE')
+                  reader.disconnect(() => {
+                    console.log('Reader disconnected')
+                    process.exit(0)
+                  })
+                }).catch((err) => {
+                  console.log('Application failed', err)
+                  process.exit(1)
+                })
               }
-            });
+            })
           }
         }
-      } else {
-        console.log(reader.name, "is empty, not interesting");
-        reader.disconnect(function () {});
+      } else if (status.state & this.SCARD_STATE_EMPTY && status.state & this.SCARD_STATE_CHANGED) {
+        console.log('EMPTY ' + reader.name)
+        if (reader.connected) {
+          reader.disconnect(function (err) {
+            if (err) {
+              console.log('could not disconnect', err)
+            }
+          })
+        }
       }
-    });
-  });
+    })
+  })
 
   pcsc.on('error', function (err) {
-    console.log('PCSC error', err.message);
-  });
+    console.log('PCSC error', err.message)
+  })
 }
 
-module.exports.card_with_atr = card_with_atr;
+module.exports.run = run

@@ -1,6 +1,6 @@
 {
   "name": "esteid",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "APDU interface of EstEID cards",
   "main": "esteid.js",
   "scripts": {

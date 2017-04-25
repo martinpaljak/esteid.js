@@ -17,6 +17,7 @@ Two implementations are provided:
  - Remote interface for web apps, via [web-eid.js](https://github.com/web-eid/web-eid.js) ([TBD, reference](https://github.com/web-eid/web-eid.js#webeidtransmitbytes))
 
 ## Development
+You need a [recent NodeJS](https://nodejs.org/en/download/current/) and developer tools for native code compilation.
 
 ```shell
 git clone https://github.com/martinpaljak/esteid.js

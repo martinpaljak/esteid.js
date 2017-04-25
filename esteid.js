@@ -165,13 +165,13 @@
               return apdu.check(transmit(cmd), 0x6282).then(function (response) {
                 var chunk = response.slice(0, response.length - 2)
                 cert = Buffer.concat([cert, chunk])
-                    // 3.4 happily returns zero length chunks if read from end of file
-                    // This also handles 6a82
+                // 3.4 happily returns zero length chunks if read from end of file
+                // This also handles 6a82
                 if (chunk.length === 0 || cert.length >= total) {
-                    // find the last byte with non-null value
-                  var cut = cert.length
+                  // find the last byte with non-null value
+                  var cut = cert.length - 1
                   for (;cert[cut] === 0x00; cut--) {}
-                  return resolve(cert.slice(0, cut))
+                  return resolve(cert.slice(0, cut + 1))
                 } else { return readfrom(offset + chunk.length, total) }
               }, function (reason) {
                 console.log('READ BINARY failed', reason)

@@ -36,17 +36,6 @@ function pem (b) {
   return '-----BEGIN CERTIFICATE-----\n' + b.toString('base64') + '\n-----END CERTIFICATE-----'
 }
 
-const PIN1 = function () {
-  if (process.env.PIN1) {
-    return Promise.resolve(process.env.PIN1)
-  } else return cli.PIN('Please enter PIN1')
-}
-
-const PIN2 = function () {
-  if (process.env.PIN2) {
-    return Promise.resolve(process.env.PIN2)
-  } else return cli.PIN('Please enter PIN2')
-}
 
 // connector is a function that returns a promise to card connection
 function testme (transmit) {
@@ -78,7 +67,7 @@ function testme (transmit) {
     }).then(function (result) {
       // Sign the JWT
       var payload = Buffer.concat([sha256header, t.hash()])
-      return EstEID.authenticate(payload, PIN1())
+      return EstEID.authenticate(payload, cli.PIN('PIN1'))
     }).then(function (signature) {
       console.log('JWT: ', t.sign(signature))
       console.log('Encrypting "%s"', secret)
@@ -88,7 +77,7 @@ function testme (transmit) {
       console.log('Decrypted to "%s"', plaintext.toString())
       console.log('Signing "%s" (sha256:%s)', claim, hash.toString('hex').toUpperCase())
       var payload = Buffer.concat([sha256header, hash])
-      return EstEID.sign(payload, PIN2())
+      return EstEID.sign(payload, cli.PIN('PIN2'))
     }).then(function (signature) {
       var v = crypto.createVerify('RSA-SHA256')
       v.update(claim)

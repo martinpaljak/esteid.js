@@ -8,8 +8,11 @@ const rl = readline.createInterface({
 })
 
 function PIN (txt) {
+  if (process.env[txt]) {
+    return Promise.resolve(process.env[txt])
+  } else 
   return new Promise(function (resolve, reject) {
-    rl.question(txt + ': ', function (input) {
+    rl.question('Please enter '+ txt + ': ', function (input) {
       if (!input || input.trim() === '') { return reject(new Error('No PIN entered')) }
       return resolve(input)
     })

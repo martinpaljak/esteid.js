@@ -122,111 +122,106 @@
       }
 
       function verify (pin, value) {
-        // Verify mentioned PIN
-        return new Promise(function (resolve, reject) {
-          value.then(function (pv) {
-            var cmd = Buffer.from([0x00, 0x20, 0x00, 0x00, 0x00])
-            cmd[3] = pin
-            var pinvalue = Buffer.from(pv, 'ascii')
-            cmd[4] = pinvalue.length
-            return transmit(Buffer.concat([cmd, pinvalue])).then(function (response) {
-              var sw = apdu.sw(response)
-              if (sw === 0x9000) {
-                return resolve(true)
-              } else if ((sw & 0x6300) === 0x6300) {
-                // Correct is 63CX but some cards are known to miss this
-                return reject(new Error('Incorrect PIN, tries left: ' + (sw & 0xf).toString(16)))
-              } else {
-                return reject(new Error('PIN verification failed: ' + sw.toString(16)))
-              }
-            }).catch(function (reason) {
-              console.log('PIN verification failed: ', reason)
-              return reject(reason)
-            })
+        // Resolve PIN value
+        return value.then(function (pv) {
+          var cmd = Buffer.from([0x00, 0x20, 0x00, 0x00, 0x00])
+          cmd[3] = pin
+          var pinvalue = Buffer.from(pv, 'ascii')
+          cmd[4] = pinvalue.length
+          return transmit(Buffer.concat([cmd, pinvalue])).then(function (response) {
+            var sw = apdu.sw(response)
+            if (sw === 0x9000) {
+              return true
+            } else if ((sw & 0x6300) === 0x6300) {
+              // Correct is 63CX but some cards are known to miss this
+              throw new Error('Incorrect PIN, tries left: ' + (sw & 0xf).toString(16))
+            } else {
+              throw new Error('PIN verification failed: ' + sw.toString(16))
+            }
           })
         })
       }
 
       function getCertificate (type) {
-        return new Promise(function (resolve, reject) {
             // SELECT FILE MF
-          apdu.check(transmit('00a4000c')).then(function () {
+        return apdu.check(transmit('00a4000c')).then(function () {
             // SELECT FILE EEEE
-            return apdu.check(transmit('00a4010c02eeee'))
-          }).then(function () {
+          return apdu.check(transmit('00a4010c02eeee'))
+        }).then(function () {
             // read aace or ddce
-            return apdu.check(transmit('00a4020c02' + (type === AUTH ? 'aace' : 'ddce')))
-          }).then(function () {
+          return apdu.check(transmit('00a4020c02' + (type === AUTH ? 'aace' : 'ddce')))
+        }).then(function () {
             // NB! requires sequential execution
-            var cert = Buffer.from([])
-            var step = 256
-            function readfrom (offset, total) {
-              var cmd = Buffer.from([0x00, 0xB0, offset >> 8 & 0xFF, offset & 0xFF, step])
-              return apdu.check(transmit(cmd), 0x6282).then(function (response) {
-                var chunk = response.slice(0, response.length - 2)
-                cert = Buffer.concat([cert, chunk])
+          var cert = Buffer.from([])
+          var step = 256
+          function readfrom (offset, total) {
+            var cmd = Buffer.from([0x00, 0xB0, offset >> 8 & 0xFF, offset & 0xFF, step])
+            return apdu.check(transmit(cmd), 0x6282).then(function (response) {
+              var chunk = response.slice(0, response.length - 2)
+              cert = Buffer.concat([cert, chunk])
                 // 3.4 happily returns zero length chunks if read from end of file
                 // This also handles 6a82
-                if (chunk.length === 0 || cert.length >= total) {
+              if (chunk.length === 0 || cert.length >= total) {
                   // find the last byte with non-null value
-                  var cut = cert.length - 1
-                  for (;cert[cut] === 0x00; cut--) {}
-                  return resolve(cert.slice(0, cut + 1))
-                } else { return readfrom(offset + chunk.length, total) }
-              }, function (reason) {
-                console.log('READ BINARY failed', reason)
-                return reject(reason)
-              })
-            }
+                var cut = cert.length - 1
+                for (;cert[cut] === 0x00; cut--) {}
+                return cert.slice(0, cut + 1)
+              } else { return readfrom(offset + chunk.length, total) }
+            }, function (reason) {
+              console.log('READ BINARY failed', reason)
+              throw reason
+            })
+          }
             // Read from 0, total of 0x6000
-            return readfrom(0, 0x800)
-          }).catch(function (err) {
-            return reject(err)
-          })
+          return readfrom(0, 0x800)
+        }).catch(function (err) {
+          throw err
         })
       }
 
       function authenticate (dtbs, pin) {
-        return new Promise(function (resolve, reject) {
-          var header = Buffer.from([0x00, 0x88, 0x00, 0x00, 0x00])
-          header[4] = dtbs.length // payload length
-           // Add Le
-          var cmd = Buffer.concat([header, dtbs, Buffer.from([0x00])])
-          apdu.check(transmit(cmd), 0x6982).then(function (response) {
-            if (apdu.sw(response) === 0x6982) {
-              return eid.verify(eid.PIN1, pin).then(function () {
-                apdu.check(transmit(cmd)).then(function (response) {
-                  resolve(apdu.data(response))
-                })
-              })
-            } else { return resolve(apdu.data(response)) }
-          }).catch(function (reason) {
-            console.log('Authentication failed: ', reason)
-            return reject(reason)
-          })
+        // Construct APDU
+        var header = Buffer.from([0x00, 0x88, 0x00, 0x00, 0x00])
+        header[4] = dtbs.length // payload length
+        // Add Le
+        var cmd = Buffer.concat([header, dtbs, Buffer.from([0x00])])
+        // Send the APDU
+        return apdu.check(transmit(cmd), 0x6982).then(function (response) {
+          // Authenticate, if required
+          if (apdu.sw(response) === 0x6982) {
+            return eid.verify(eid.PIN1, pin).then(function () {
+              // re-send APDU
+              return apdu.check(transmit(cmd))
+            }).then(function (response) {
+              return apdu.data(response)
+            })
+          } else {
+            return apdu.data(response)
+          }
+        }).catch(function (reason) {
+          console.log('Authentication failed: ', reason)
+          throw reason
         })
       }
 
       function sign (dtbs, pin) {
-        return new Promise(function (resolve, reject) {
-          // SET SECURITY ENVIRONMENT
-          apdu.check(transmit('0022F301')).then(function () {
-            // VERIFY PIN2
-            return eid.verify(eid.PIN2, pin)
-          }).then(function () {
-            // PSO DIGITAL SIGNATurE
-            var header = Buffer.from([0x00, 0x2a, 0x9e, 0x9a, 0x00])
-            header[4] = dtbs.length // payload length
-             // Add Le
-            var cmd = Buffer.concat([header, dtbs, Buffer.from([0x00])])
-            return apdu.check(transmit(cmd))
-          }).then(function (response) {
-            // resolve to signature
-            return resolve(apdu.data(response))
-          }).catch(function (reason) {
-            console.log('Signing failed: ', reason)
-            return reject(reason)
-          })
+        // SET SECURITY ENVIRONMENT
+        return apdu.check(transmit('0022F301')).then(function () {
+          // VERIFY PIN2
+          return eid.verify(eid.PIN2, pin)
+        }).then(function () {
+          // PSO DIGITAL SIGNATurE
+          var header = Buffer.from([0x00, 0x2a, 0x9e, 0x9a, 0x00])
+          header[4] = dtbs.length // payload length
+          // Add Le
+          var cmd = Buffer.concat([header, dtbs, Buffer.from([0x00])])
+          return apdu.check(transmit(cmd))
+        }).then(function (response) {
+          // resolve to signature
+          return apdu.data(response)
+        }).catch(function (reason) {
+          console.log('Signing failed: ', reason)
+          throw reason
         })
       }
 
@@ -257,11 +252,33 @@
         })
       }
 
+      function change (pin, oldvalue, newvalue) {
+        var oldpin, newpin
+        return oldvalue.then(function (pv) {
+          oldpin = Buffer.from(pv, 'ascii')
+          return newvalue
+        }).then(function (pv) {
+          newpin = Buffer.from(pv, 'ascii')
+          var cmd = Buffer.from([0x00, 0x24, 0x00, 0x00, 0x00])
+          cmd[3] = pin
+          cmd[4] = oldpin.length + newpin.length
+          return transmit(Buffer.concat([cmd, oldpin, newpin])).then(function (response) {
+            var sw = apdu.sw(response)
+            if ((sw & 0x6300) === 0x6300) { throw new Error('Incorrect PIN, tries left: ' + (sw & 0xf).toString(16)) }
+            if (sw !== 0x9000) { throw new Error('PIN verification failed: ' + sw.toString(16)) }
+            return true
+          })
+        })
+      }
+
       // Members
       eid.verify = verify
+      eid.change = change
+
       eid.sign = sign
       eid.authenticate = authenticate
       eid.decrypt = decrypt
+
       eid.getPersonalData = getPersonalData
       eid.getCertificate = getCertificate
       eid.getPINCounters = getPINCounters

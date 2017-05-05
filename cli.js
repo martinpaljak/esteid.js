@@ -10,11 +10,21 @@ const rl = readline.createInterface({
 function PIN (txt) {
   if (process.env[txt]) {
     return Promise.resolve(process.env[txt])
-  } else 
+  } else {
+    return new Promise(function (resolve, reject) {
+      rl.question('Please enter ' + txt + ': ', function (input) {
+        if (!input || input.trim() === '') { return reject(new Error('No PIN entered')) }
+        return resolve(input)
+      })
+    })
+  }
+}
+
+function confirm (txt, def) {
   return new Promise(function (resolve, reject) {
-    rl.question('Please enter '+ txt + ': ', function (input) {
-      if (!input || input.trim() === '') { return reject(new Error('No PIN entered')) }
-      return resolve(input)
+    rl.question(txt + '? (y/n): ', function (input) {
+      if (!input || input.trim() === '') { return resolve(def) }
+      return resolve('yes'.startsWith(input.toLowerCase()))
     })
   })
 }
@@ -33,3 +43,4 @@ function centrify (txt) {
 module.exports.PIN = PIN
 module.exports.PINString = PINString
 module.exports.centrify = centrify
+module.exports.confirm = confirm

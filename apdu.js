@@ -57,7 +57,7 @@ function check (p, ok) {
     p.then(function (response) {
       const sw = getsw(response)
       if (oksw.indexOf(sw) === -1) {
-        return reject(new Error('APDU SW check failed, SW 0x' + sw.toString(16) + ' not in ' + oksw.map(function (x) { return '0x' + x.toString(16)}).join(' ')))
+        return reject(new Error('APDU SW check failed, SW 0x' + sw.toString(16) + ' not in ' + oksw.map(function (x) { return '0x' + x.toString(16) }).join(' ')))
       } else {
         return resolve(response)
       }

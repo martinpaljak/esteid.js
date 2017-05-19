@@ -18,7 +18,7 @@ Three implementations are provided:
  - Browser app interface via [web-eid.js](https://github.com/web-eid/web-eid.js) (TBD, in [`web.js`](./web.js) and [`web.html`](./web.html))
 
 ## Development
-You need a [recent NodeJS](https://nodejs.org/en/download/current/) and developer tools for native code compilation.
+You need a [recent NodeJS](https://nodejs.org/en/download/current/) and developer tools for native code compilation. On Windows also [OpenSSL 1.0.X](https://slproweb.com/products/Win32OpenSSL.html) that matches the architecture of NodeJS.
 
 ```shell
 git clone https://github.com/martinpaljak/esteid.js
@@ -26,6 +26,7 @@ cd esteid.js
 npm install
 npm test
 ```
+Give the target you want to test as parameter to `npm test`
 
 ## API and usage
 First

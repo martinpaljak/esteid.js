@@ -11,10 +11,11 @@ function transmit(Buffer apdu) {
    return new Promise((resolve, reject) => resolve(SCardTransmit(apdu)))
 }
 ```
-Two implementations are provided:
+Three implementations are provided:
 
- - Local [PC/SC interface](https://msdn.microsoft.com/en-us/library/windows/desktop/aa379804(v=vs.85).aspx), provided by [node-pcsclite](https://github.com/santigimeno/node-pcsclite) (in [`card.js`](./card.js))
- - Remote interface for web apps, via [web-eid.js](https://github.com/web-eid/web-eid.js) ([TBD, reference](https://github.com/web-eid/web-eid.js#webeidtransmitbytes))
+ - Local [PC/SC interface](https://msdn.microsoft.com/en-us/library/windows/desktop/aa379804(v=vs.85).aspx), provided by [node-pcsclite](https://github.com/santigimeno/node-pcsclite) (in [`node-pcsc.js`](./node-pcsc.js))
+ - Web apps via [web-eid.js](https://github.com/web-eid/web-eid.js) ([TBD, reference](https://github.com/web-eid/web-eid.js#webeidtransmitbytes))
+ - RPC interface via [Web eID app WebSocket protocol](https://github.com/web-eid/web-eid/wiki/MessagingAPI) (in [`node-web-eid-ws.js`](./node-web-eid-ws.js))
 
 ## Development
 You need a [recent NodeJS](https://nodejs.org/en/download/current/) and developer tools for native code compilation.
@@ -23,7 +24,7 @@ You need a [recent NodeJS](https://nodejs.org/en/download/current/) and develope
 git clone https://github.com/martinpaljak/esteid.js
 cd esteid.js
 npm install
-node test.js
+npm test
 ```
 
 ## API and usage
@@ -151,5 +152,3 @@ EstEID.getKeyCounters().then((counters) => {
    // do something with the counters
 })
 ```
-
-

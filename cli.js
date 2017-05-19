@@ -2,27 +2,36 @@
 // Command line helpers
 const readline = require('readline')
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-})
+function openrl () {
+  return readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  })
+}
 
 function PIN (txt) {
   if (process.env[txt]) {
     return Promise.resolve(process.env[txt])
   } else {
     return new Promise(function (resolve, reject) {
-      rl.question('Please enter ' + txt + ': ', function (input) {
-        if (!input || input.trim() === '') { return reject(new Error('No PIN entered')) }
-        return resolve(input)
-      })
+      // Add a small timeout so that any pending console loggings would have time to write
+      setTimeout(function () {
+        var rl = openrl()
+        rl.question('Please enter ' + txt + ': ', function (input) {
+          rl.close()
+          if (!input || input.trim() === '') { return reject(new Error('No PIN entered')) }
+          return resolve(input)
+        })
+      }, 300)
     })
   }
 }
 
 function confirm (txt, def) {
   return new Promise(function (resolve, reject) {
+    var rl = openrl()
     rl.question(txt + '? (y/n): ', function (input) {
+      rl.close()
       if (!input || input.trim() === '') { return resolve(def) }
       return resolve('yes'.startsWith(input.toLowerCase()))
     })

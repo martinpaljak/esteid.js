@@ -48,23 +48,18 @@ function apdufy (transmit) {
   }
 }
 
-// Given a APDU promise, reject it if sw is not 0x9000
+// Given a APDU promise, resolve it and reject it if answer sw is not 0x9000 or "ok"
 function check (p, ok) {
   var oksw = []
   if (typeof ok === 'number') { oksw.push(ok) }
   if (oksw.indexOf(0x9000) === -1) { oksw.push(0x9000) }
-  return new Promise(function (resolve, reject) {
-    p.then(function (response) {
-      const sw = getsw(response)
-      if (oksw.indexOf(sw) === -1) {
-        return reject(new Error('APDU SW check failed, SW 0x' + sw.toString(16) + ' not in ' + oksw.map(function (x) { return '0x' + x.toString(16) }).join(' ')))
-      } else {
-        return resolve(response)
-      }
-    }).catch(function (reason) {
-      console.log('APDU failed, thus not SW check')
-      reject(reason)
-    })
+  return p.then(function (response) {
+    const sw = getsw(response)
+    if (oksw.indexOf(sw) === -1) {
+      throw new Error('APDU SW check failed, SW 0x' + sw.toString(16) + ' not in ' + oksw.map(function (x) { return '0x' + x.toString(16) }).join(' '))
+    } else {
+      return response
+    }
   })
 }
 

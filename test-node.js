@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 'use strict'
 // We are fancy, indeed
 const banner = `
@@ -17,7 +18,11 @@ var esteid = require('./esteid.js')
 cli.centrify(banner)
 cli.centrify('EstEID for JS, version ' + esteid.VERSION + ' by github.com/@martinpljak')
 cli.centrify('\n\n\n')
-var card = require('./card.js')
+
+if (process.argv.length < 3 || ['pcsc', 'app'].indexOf(process.argv[2]) === -1) {
+  console.warn('Usage:\n\n$ npm test [pcsc|app]\n')
+  process.exit(1)
+}
 
 var apdu = require('./apdu.js')
 var jwt = require('./jwt.js')
@@ -36,8 +41,9 @@ function pem (b) {
   return '-----BEGIN CERTIFICATE-----\n' + b.toString('base64') + '\n-----END CERTIFICATE-----'
 }
 
-// connector is a function that returns a promise to card connection
-function testme (transmit) {
+// transmit is a function that returns a promise to card connection
+// app is a function that returns a promise
+function testapp (transmit) {
   // Promise to run an application against a card.
   var EstEID = esteid.connect(apdu.apdufy(transmit))
   var t = {}
@@ -71,7 +77,7 @@ function testme (transmit) {
     authcert = r
     var c = x509.parseCert(pem(r))
     console.log('Certificate:', c.subject.commonName, c.subject.organizationalUnitName)
-      // Do sample JWT based on authentication certificate
+    // Do sample JWT based on authentication certificate
     t = jwt.jwt(authcert, uuid(), 'https://example.com')
     return Promise.resolve(t)
   }).then(function (result) {
@@ -100,5 +106,10 @@ function testme (transmit) {
   })
 }
 
-// Run above app whenever a card with EstEID ATR is inserted
-card.run(esteid.ATRS, testme)
+if (process.argv[2] === 'pcsc') {
+  const pcsc = require('./node-pcsc.js')
+  pcsc.run(esteid.ATRS, testapp)
+} else if (process.argv[2] === 'app') {
+  const ws = require('./node-web-eid-ws.js')
+  ws.run(testapp)
+}

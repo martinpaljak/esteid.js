@@ -1,7 +1,7 @@
 # esteid.js &middot; [![npm version](https://badge.fury.io/js/esteid.svg)](https://badge.fury.io/js/esteid)
 Provides a high level API that transaltes to low level APDU interface of EstEID cards, in JavaScript.
 
-For NodeJS and Web.
+For NodeJS and browsers.
 
 ## BIBO transmit explained
 Requires the availability of a reliable Promise based BIBO (Bytes-go-In, Bytes-come-Out) transmit function. That is, a function that takes an APDU and returns a Promise that would resolve to the response from the card, that with a mix of PC/SC and JavaScript would look something like:
@@ -13,9 +13,9 @@ function transmit(Buffer apdu) {
 ```
 Three implementations are provided:
 
- - Local [PC/SC interface](https://msdn.microsoft.com/en-us/library/windows/desktop/aa379804(v=vs.85).aspx), provided by [node-pcsclite](https://github.com/santigimeno/node-pcsclite) (in [`node-pcsc.js`](./node-pcsc.js))
- - Web apps via [web-eid.js](https://github.com/web-eid/web-eid.js) ([TBD, reference](https://github.com/web-eid/web-eid.js#webeidtransmitbytes))
- - RPC interface via [Web eID app WebSocket protocol](https://github.com/web-eid/web-eid/wiki/MessagingAPI) (in [`node-web-eid-ws.js`](./node-web-eid-ws.js))
+ - Node [PC/SC interface](https://msdn.microsoft.com/en-us/library/windows/desktop/aa379804(v=vs.85).aspx), provided by [node-pcsclite](https://github.com/santigimeno/node-pcsclite) (in [`node-pcsc.js`](./node-pcsc.js))
+ - Node RPC interface via [Web eID app WebSocket protocol](https://github.com/web-eid/web-eid/wiki/MessagingAPI) (in [`node-web-eid-ws.js`](./node-web-eid-ws.js))
+ - Browser app interface via [web-eid.js](https://github.com/web-eid/web-eid.js) (TBD, in [`web.js`](./web.js) and [`web.html`](./web.html))
 
 ## Development
 You need a [recent NodeJS](https://nodejs.org/en/download/current/) and developer tools for native code compilation.

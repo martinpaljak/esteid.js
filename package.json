@@ -27,6 +27,7 @@
   "devDependencies": {
     "pcsclite": "^0.5.0",
     "pre-commit": "^1.2.2",
+    "readline-sync": "^1.4.7",
     "standard": "^10.0.2",
     "ws": "^2.3.1"
   },

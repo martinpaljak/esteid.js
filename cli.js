@@ -1,13 +1,6 @@
 'use strict'
 // Command line helpers
-const readline = require('readline')
-
-function openrl () {
-  return readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  })
-}
+const readline = require('readline-sync')
 
 function PIN (txt) {
   if (process.env[txt]) {
@@ -16,12 +9,10 @@ function PIN (txt) {
     return new Promise(function (resolve, reject) {
       // Add a small timeout so that any pending console loggings would have time to write
       setTimeout(function () {
-        var rl = openrl()
-        rl.question('Please enter ' + txt + ': ', function (input) {
-          rl.close()
-          if (!input || input.trim() === '') { return reject(new Error('No PIN entered')) }
-          return resolve(input)
-        })
+        var input = readline.question('Please enter ' + txt + ': ', {hideEchoBack: true})
+
+        if (!input || input.trim() === '') { return reject(new Error('No PIN entered')) }
+        return resolve(input)
       }, 300)
     })
   }
@@ -29,12 +20,7 @@ function PIN (txt) {
 
 function confirm (txt, def) {
   return new Promise(function (resolve, reject) {
-    var rl = openrl()
-    rl.question(txt + '? (y/n): ', function (input) {
-      rl.close()
-      if (!input || input.trim() === '') { return resolve(def) }
-      return resolve('yes'.startsWith(input.toLowerCase()))
-    })
+    resolve(readline.keyInYN(txt))
   })
 }
 

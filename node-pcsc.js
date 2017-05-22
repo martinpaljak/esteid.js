@@ -27,7 +27,7 @@ function transmit (reader, protocol) {
 
 // Finds a card with a ATR as in the list, then
 // runs the application-promise generator
-function run (atrs, app) {
+function run (app, atrs) {
   console.log('Please connect a card reader and insert a card')
   // If a single ATR
   if (typeof atrs === 'string') {

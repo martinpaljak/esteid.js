@@ -33,7 +33,7 @@ function WSConnect (url, options) {
           if (!msg.error) {
             ws.promises[msg.id].resolve(msg)
           } else {
-            ws.promises[msg.id].reject(new Error('Message errorred ' + msg.error))
+            ws.promises[msg.id].reject(new Error('Web eID status: ' + msg.error))
           }
           delete ws.promises[msg.id]
         }

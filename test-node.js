@@ -108,8 +108,10 @@ function testapp (transmit) {
 
 if (process.argv[2] === 'pcsc') {
   const pcsc = require('./node-pcsc.js')
-  pcsc.run(esteid.ATRS, testapp)
+  pcsc.run(testapp, esteid.ATRS)
 } else if (process.argv[2] === 'app') {
   const ws = require('./node-web-eid-ws.js')
-  ws.run(testapp)
+  ws.run(testapp).catch(function (reason) {
+    console.log('Application failed: ', reason)
+  })
 }

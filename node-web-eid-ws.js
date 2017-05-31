@@ -57,24 +57,39 @@ function WSConnect (url, options) {
 
 // app is a function that takes as an argument a function
 // which takes an APDU an returns a promise that resolves to the APDU response
-function runapp (app) {
+function runapp (app, atrs) {
+  // convert ATR-s
+  var baseatrs = []
+  // FIXME: fix this in test-node.js
+  for (var atr in atrs) {
+    baseatrs.push(Buffer.from(atrs[atr], 'hex').toString('base64'))
+  }
   return WSConnect(APPURL, {}).then(function (ws) {
-    return ws.send({'SCardConnect': {'protocol': '*'}}).then(function (reader) {
+    var readername
+    return ws.send({'SCardConnect': {'protocol': '*', 'atrs': baseatrs}}).then(function (reader) {
+      var atrbin = Buffer.from(reader.atr, 'base64')
+      if (baseatrs.indexOf(atrbin) === -1) {
+        console.log('This is not the card we wanted')
+      }
+      readername = reader.reader
       // Reader is currently a dummy.
       function transmit (apdu) {
-        return ws.send({'SCardTransmit': {'bytes': apdu.toString('base64')}}).then(function (response) {
+        return ws.send({'SCardTransmit': {'reader': readername, 'bytes': apdu.toString('base64')}}).then(function (response) {
           return Buffer.from(response.bytes, 'base64')
         })
       }
       return app(transmit)
     }).then(function (blah) {
-      return ws.send({'SCardDisconnect': {}}).then(function () {
+      return ws.send({'SCardDisconnect': {reader: readername}}).then(function () {
+        readername = undefined
         ws.disconnect()
       })
     }).catch(function (reason) {
-      ws.send({'SCardDisconnect': {}}).then(function () {
-        ws.disconnect()
-      })
+      if (readername) {
+        ws.send({'SCardDisconnect': {reader: readername}}).then(function () {
+          ws.disconnect()
+        })
+      }
       throw reason
     })
   })

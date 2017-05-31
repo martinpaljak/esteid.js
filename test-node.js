@@ -111,7 +111,7 @@ if (process.argv[2] === 'pcsc') {
   pcsc.run(testapp, esteid.ATRS)
 } else if (process.argv[2] === 'app') {
   const ws = require('./node-web-eid-ws.js')
-  ws.run(testapp).catch(function (reason) {
+  ws.run(testapp, esteid.ATRS).catch(function (reason) {
     console.log('Application failed: ', reason)
   })
 }

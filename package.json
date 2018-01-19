@@ -25,15 +25,15 @@
   },
   "homepage": "https://github.com/martinpaljak/esteid.js#readme",
   "devDependencies": {
-    "pcsclite": "^0.5.0",
+    "pcsclite": "^0.6.0",
     "pre-commit": "^1.2.2",
     "readline-sync": "^1.4.7",
-    "standard": "^10.0.2",
-    "ws": "^2.3.1"
+    "standard": "^10.0.3",
+    "ws": "4.0.0"
   },
   "dependencies": {
     "uuid": "^3.0.1",
-    "x509": "^0.3.2"
+    "x509": "^0.3.3"
   },
   "pre-commit": [
     "indent"

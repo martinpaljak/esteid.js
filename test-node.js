@@ -106,14 +106,20 @@ function testapp(transmit) {
     })
     .then(function(r) {
       signcert = r;
-      var c = Certificate.fromPEM(pem(r));
-      console.log("Certificate:", c.subject.CN, c.subject.OU);
+      let c = Certificate.fromPEM(pem(r));
+      // should be iso8859-15
+      let cn = c.subject.attributes.find(e => e.oid === '2.5.4.3').value.toString('latin1');
+      let ou = c.subject.attributes.find(e => e.oid === '2.5.4.11').value.toString('latin1');
+      console.log("Certificate:", cn, ou);
       return EstEID.getCertificate(EstEID.AUTH);
     })
     .then(function(r) {
       authcert = r;
-      var c = Certificate.fromPEM(pem(r));
-      console.log("Certificate:", c.subject.CN, c.subject.OU);
+      let c = Certificate.fromPEM(pem(r));
+      // should be iso8859-15
+      let cn = c.subject.attributes.find(e => e.oid === '2.5.4.3').value.toString('latin1');
+      let ou = c.subject.attributes.find(e => e.oid === '2.5.4.11').value.toString('latin1');
+      console.log("Certificate:", cn, ou);
       // Do sample JWT based on authentication certificate
       t = jwt.jwt(authcert, uuid(), "https://example.com");
       return Promise.resolve(t);

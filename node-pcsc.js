@@ -1,7 +1,7 @@
 "use strict";
 
 var trace = true;
-var pcsc = require("pcsclite")();
+var pcsc = require("@pokusew/pcsclite")();
 
 // Returns a function that accepts APDU-s and return promises
 // that resolve to responses

@@ -1,11 +1,11 @@
 {
   "name": "esteid",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "APDU interface of EstEID cards",
   "main": "esteid.js",
   "scripts": {
     "test": "node test-node.js",
-    "indent": "standard --fix"
+    "indent": "prettier --write './**/*.js'"
   },
   "repository": {
     "type": "git",
@@ -25,15 +25,15 @@
   },
   "homepage": "https://github.com/martinpaljak/esteid.js#readme",
   "devDependencies": {
-    "pcsclite": "^0.6.0",
+    "pcsclite": "^1.0.0",
     "pre-commit": "^1.2.2",
     "readline-sync": "^1.4.7",
-    "standard": "^10.0.3",
-    "ws": "4.0.0"
+    "standard": "^14.3.1",
+    "ws": "7.2.1"
   },
   "dependencies": {
-    "uuid": "^3.0.1",
-    "x509": "^0.3.3"
+    "@fidm/x509": "^1.2.1",
+    "uuid": "^3.4.0"
   },
   "pre-commit": [
     "indent"
